@@ -10,25 +10,25 @@ from typing import Any, Collection, Dict, List
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import DeclarativeBase, Session
 
-from src.postgresql.database import PostgreSqlDb
-from src.postgresql.exceptions import PostgreSqlQueryingException
+from src.database import SqlAlchemyDb
+from src.exc import SqlAlchemyRepositoryQueryingException
 
 
-class PgBaseRepository(ABC):
+class BaseRepository(ABC):
     """Base repository from which all repositories inherit from."""
     _model: DeclarativeBase
-    _database: PostgreSqlDb
+    _database: SqlAlchemyDb
 
-    def __init__(self, model: DeclarativeBase, database: PostgreSqlDb):
+    def __init__(self, model: DeclarativeBase, database: SqlAlchemyDb):
         self._model = model
         self._database = database
 
-    def get_database(self) -> PostgreSqlDb:
+    def get_database(self) -> SqlAlchemyDb:
         """Returns a reference to the repository's database instance."""
         return self._database
 
 
-class PgRetrieveRepository(ABC, PgBaseRepository):
+class RetrieveRepository(ABC, BaseRepository):
     """Defines a 'retrieve' method, which queries an object based on its primary key."""
 
     def retrieve(self, pk: Any, session: Session | None = None) -> Any:
@@ -51,12 +51,12 @@ class PgRetrieveRepository(ABC, PgBaseRepository):
         """Queries and returns an object based on its primary key."""
         item = session.query(self._model).get(pk)
         if item is None:
-            raise PostgreSqlQueryingException(f"No object with primary key {pk}, exists on table "
-                                              f"{self._model.__tablename__}")
+            raise SqlAlchemyRepositoryQueryingException(f"No object with primary key {pk}, exists on table "
+                                                        f"{self._model.__tablename__}")
         return item
 
 
-class PgListRepository(ABC, PgBaseRepository):
+class ListRepository(ABC, BaseRepository):
     """Defines a 'list_all' method, which queries all objects of the repository's model."""
 
     def list_all(self, session: Session | None = None) -> List[Any]:
@@ -74,7 +74,7 @@ class PgListRepository(ABC, PgBaseRepository):
         return self._list_all(session)
 
 
-class PgAddOneRepository(ABC, PgBaseRepository):
+class AddOneRepository(ABC, BaseRepository):
     """Defines an 'add_one' method, which inserts an object."""
 
     def add_one(self, obj: Any, session: Session | None = None) -> Any:
@@ -102,7 +102,7 @@ class PgAddOneRepository(ABC, PgBaseRepository):
         return obj
 
 
-class PgAddManyRepository(ABC, PgBaseRepository):
+class AddManyRepository(ABC, BaseRepository):
     """Defines an 'add_many' method, which inserts multiple objects."""
 
     def add_many(
@@ -143,7 +143,7 @@ class PgAddManyRepository(ABC, PgBaseRepository):
             return objects
 
 
-class PgDeleteOneRepository(ABC, PgBaseRepository):
+class DeleteOneRepository(ABC, BaseRepository):
     """Defines a 'delete_one' method, which deletes an object based on its primary key."""
 
     def delete_one(self, pk: Any, session: Session | None = None) -> None:
@@ -168,7 +168,7 @@ class PgDeleteOneRepository(ABC, PgBaseRepository):
         session.commit()
 
 
-class PgUpdateRepository(ABC, PgBaseRepository):
+class UpdateRepository(ABC, BaseRepository):
     """
     Defines an 'update_one' method, which updates an object based on a given dictionary of update values, and the
     object's primary key identifier.
