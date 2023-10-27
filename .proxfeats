@@ -1,0 +1,13 @@
+# TODO: Refactor to include this code
+def auto_session(func):
+    def wrapper(self: PgBaseRepository, session: Session | None = None, *args: Any, **kwargs: Any):
+        if session is None:
+            with self.get_database().get_database_session() as session:
+                return func(session=session, *args, **kwargs)
+        return func(session=session, *args, **kwargs)
+    return wrapper
+
+------------
+
+# TODO: tests with sqlite
+engine = create_engine("sqlite+pysqlite:///file_path")
